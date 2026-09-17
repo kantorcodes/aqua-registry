@@ -1,0 +1,42 @@
+name: Generate HOL Guard package
+
+on:
+  push:
+    branches:
+      - dist/aqua-hol-guard-gen
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+          policy_allow: "true"
+      - name: Install development tools
+        run: |
+          npm install --global prettier
+          aqua i -l
+          docker version
+      - name: Generate and validate HOL Guard package
+        env:
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "kantorcodes"
+          git config user.email "6068672+kantorcodes@users.noreply.github.com"
+          set +e
+          argd s "hashgraph-online/hol-guard"
+          status=$?
+          current_branch="$(git branch --show-current)"
+          git status --short
+          git log -3 --oneline
+          if [ "$current_branch" = "feat/hashgraph-online/hol-guard" ]; then
+            git push origin "$current_branch"
+          fi
+          exit "$status"
