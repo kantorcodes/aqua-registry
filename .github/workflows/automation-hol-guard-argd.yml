@@ -1,0 +1,56 @@
+name: Generate HOL Guard aqua package
+
+on:
+  push:
+    branches:
+      - automation/hol-guard-argd-v18-1
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+          policy_allow: "true"
+      - name: Install registry tooling
+        run: aqua i -l
+      - name: Scaffold with argd
+        id: scaffold
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set +e
+          argd s hashgraph-online/hol-guard
+          rc=$?
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+          echo "current_branch=$(git branch --show-current)" >> "$GITHUB_OUTPUT"
+          git status --short
+          exit 0
+      - name: Preserve generated branch without automation workflow
+        shell: bash
+        run: |
+          branch="$(git branch --show-current)"
+          if [[ "$branch" == "automation/hol-guard-argd-v18-1" ]]; then
+            echo "argd did not create a generated branch" >&2
+            exit 1
+          fi
+          git config user.name "kantorcodes"
+          git config user.email "6068672+kantorcodes@users.noreply.github.com"
+          git rm -f .github/workflows/automation-hol-guard-argd.yml || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: remove automation-only generation workflow"
+          fi
+          git push --force-with-lease origin "HEAD:refs/heads/automation/generated-hol-guard-argd"
+      - name: Generation summary
+        run: |
+          echo "argd_exit=${{ steps.scaffold.outputs.exit_code }}"
+          echo "argd_branch=${{ steps.scaffold.outputs.current_branch }}"
