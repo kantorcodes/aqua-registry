@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aquaproj/aqua/main/json-schema/registry.json
+packages:
+  - type: github_release
+    repo_owner: hashgraph-online
+    repo_name: hol-guard
+    description: Security firewall and runtime controls for AI agents
+    version_constraint: semver(">= 3.0.186")
+    asset: hol-guard-core-{{trimV .Version}}-{{.Arch}}-{{.OS}}
+    format: raw
+    files:
+      - name: hol-guard
+    supported_envs:
+      - darwin/arm64
+      - linux/amd64
+    replacements:
+      amd64: x86_64
+      arm64: aarch64
+      darwin: apple-darwin
+      linux: unknown-linux-gnu
