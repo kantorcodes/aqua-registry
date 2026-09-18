@@ -16,51 +16,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
-          import base64, json, os, subprocess
+          import base64, json, subprocess
           path = "registry.yaml"
           with open(path, "r", encoding="utf-8") as f:
               text = f.read()
-          old = """      - version_constraint: semver("<= 3.0.189")
-        asset: hol_guard-{{trimV .Version}}-py3-none-many{{.OS}}_2_17_{{.Arch}}.whl
-        format: raw
-        windows_arm_emulation: true
-        complete_windows_ext: false
-        replacements:
-          amd64: x86_64
-          darwin: macosx
-          windows: win
-        checksum:
-          type: github_release
-          asset: "{{.Asset}}.sha256"
-          algorithm: sha256
-        slsa_provenance:
-          type: github_release
-          asset: hol-guard-{{.Version}}.intoto.jsonl
-        overrides:
-"""
-          new = """      - version_constraint: semver("<= 3.0.189")
-        asset: hol_guard-{{trimV .Version}}-py3-none-many{{.OS}}_2_17_{{.Arch}}.whl
-        format: raw
-        windows_arm_emulation: true
-        complete_windows_ext: false
-        replacements:
-          amd64: x86_64
-          darwin: macosx
-          windows: win
-        checksum:
-          type: github_release
-          asset: "{{.Asset}}.sha256"
-          algorithm: sha256
-        # Disable slsa_provenance
-        # FAILED: SLSA verification failed: untrusted reusable workflow: https://github.com/hashgraph-online/hol-guard/.github/workflows/publish.yml with builderID provided: false
-        github_artifact_attestations:
-          signer_workflow: hashgraph-online/hol-guard/.github/workflows/publish.yml
-        overrides:
-"""
+          old = "      - version_constraint: semver(\"<= 3.0.189\")\n        asset: hol_guard-{{trimV .Version}}-py3-none-many{{.OS}}_2_17_{{.Arch}}.whl\n        format: raw\n        windows_arm_emulation: true\n        complete_windows_ext: false\n        replacements:\n          amd64: x86_64\n          darwin: macosx\n          windows: win\n        checksum:\n          type: github_release\n          asset: \"{{.Asset}}.sha256\"\n          algorithm: sha256\n        slsa_provenance:\n          type: github_release\n          asset: hol-guard-{{.Version}}.intoto.jsonl\n        overrides:\n"
+          new = "      - version_constraint: semver(\"<= 3.0.189\")\n        asset: hol_guard-{{trimV .Version}}-py3-none-many{{.OS}}_2_17_{{.Arch}}.whl\n        format: raw\n        windows_arm_emulation: true\n        complete_windows_ext: false\n        replacements:\n          amd64: x86_64\n          darwin: macosx\n          windows: win\n        checksum:\n          type: github_release\n          asset: \"{{.Asset}}.sha256\"\n          algorithm: sha256\n        # Disable slsa_provenance\n        # FAILED: SLSA verification failed: untrusted reusable workflow: https://github.com/hashgraph-online/hol-guard/.github/workflows/publish.yml with builderID provided: false\n        github_artifact_attestations:\n          signer_workflow: hashgraph-online/hol-guard/.github/workflows/publish.yml\n        overrides:\n"
           if text.count(old) != 1:
               raise SystemExit(f"expected one target block, found {text.count(old)}")
           updated = text.replace(old, new, 1)
-          query = """mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input:$input) { commit { oid url signature { isValid wasSignedByGitHub } } } }"""
+          query = "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input:$input) { commit { oid url signature { isValid wasSignedByGitHub } } } }"
           payload = {
               "query": query,
               "variables": {"input": {
