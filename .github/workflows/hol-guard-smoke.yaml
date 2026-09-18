@@ -1,0 +1,47 @@
+---
+name: hol-guard-aqua-smoke
+on:
+  push:
+    branches:
+      - validation/hol-guard-exec
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+          policy_allow: "true"
+        env:
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
+      - name: Create focused config
+        run: |
+          cat > aqua/hol-guard-smoke.yaml <<'EOF'
+          ---
+          checksum:
+            enabled: true
+          registries:
+            - name: standard
+              type: local
+              path: ../registry.yaml
+          packages:
+            - name: hashgraph-online/hol-guard@v3.0.189
+          EOF
+      - name: Install HOL Guard through Aqua
+        run: aqua i
+        env:
+          AQUA_CONFIG: ${{ github.workspace }}/aqua/hol-guard-smoke.yaml
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
+      - name: Execute HOL Guard through Aqua
+        run: aqua exec -- hol-guard --version
+        env:
+          AQUA_CONFIG: ${{ github.workspace }}/aqua/hol-guard-smoke.yaml
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
