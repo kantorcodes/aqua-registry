@@ -1,0 +1,48 @@
+name: Validate HOL Guard aqua package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feat/hashgraph-online/hol-guard-signed
+          fetch-depth: 1
+      - uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+          policy_allow: "true"
+      - name: Install development tools
+        run: |
+          npm install --global prettier
+          aqua i -l
+          docker version
+      - name: Validate registry package
+        env:
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          argd t "hashgraph-online/hol-guard"
+          conftest test --combine pkgs/hashgraph-online/hol-guard/pkg.yaml pkgs/hashgraph-online/hol-guard/registry.yaml
+          prettier --check pkgs/hashgraph-online/hol-guard/pkg.yaml pkgs/hashgraph-online/hol-guard/registry.yaml
+      - name: Install and execute current stable release
+        env:
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/aqua.yaml <<EOF
+          checksum:
+            enabled: true
+          registries:
+            - name: local
+              type: local
+              path: $GITHUB_WORKSPACE/registry.yaml
+          packages:
+            - name: hashgraph-online/hol-guard@v3.0.189
+              registry: local
+          EOF
+          AQUA_CONFIG=/tmp/aqua.yaml AQUA_ROOT_DIR="$RUNNER_TEMP/aqua-root" aqua i
+          AQUA_CONFIG=/tmp/aqua.yaml AQUA_ROOT_DIR="$RUNNER_TEMP/aqua-root" aqua exec -- hol-guard --version
+          AQUA_CONFIG=/tmp/aqua.yaml AQUA_ROOT_DIR="$RUNNER_TEMP/aqua-root" aqua exec -- hol-guard --help >/tmp/hol-guard-help.txt
+          test -s /tmp/hol-guard-help.txt
